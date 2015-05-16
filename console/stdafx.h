@@ -10,10 +10,15 @@
 #include <stdio.h>
 #include <tchar.h>
 #include <queue>
+#include <list>
+#include <set>
+#include <map>
+#include <string>
 
 #include <taglib.h>
 #include <fileref.h>
 #include <tag.h>
+#include <toolkit/tpropertymap.h>
 
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string.hpp>

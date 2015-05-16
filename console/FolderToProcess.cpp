@@ -2,6 +2,6 @@
 #include "FolderToProcess.h"
 
 
-FolderToProcess::FolderToProcess(const bfs::path &folder)
+FolderToProcess::FolderToProcess(const bfs::path& folder)
 	: folder(folder) {
 }
