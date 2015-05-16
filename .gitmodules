@@ -1,0 +1,3 @@
+[submodule "deps/libmusicbrainz"]
+	path = deps/libmusicbrainz
+	url = https://github.com/metabrainz/libmusicbrainz.git
