@@ -2,6 +2,7 @@
 
 #include "FolderToProcess.h"
 #include "MusicBrainz.h"
+#include "utf8.h"
 
 static bfs::path make_relative(bfs::path from, bfs::path to) {
 	from = absolute(from);
@@ -132,15 +133,8 @@ void ReadTrackInfo(FolderToProcess* folder) {
 	}
 }
 
-struct InsensitiveCompare
-{
-	bool operator()(const string& a, const string& b) const {
-		return Poco::UTF8::icompare(a, b) < 0;
-	}
-};
-
 static Album FindAlbumFromTracks(const list<Track>& tracks, bool allowMissing) {
-	set<string, InsensitiveCompare> album;
+	set<string, CaseAndAccentsInsensitiveCompare> album;
 
 	for (auto&& track : tracks) {
 		if (!track.album.empty())
@@ -166,7 +160,7 @@ void DetectAlbumFromTracks(FolderToProcess* folder) {
 }
 
 static Artist FindArtistFromTracks(const list<Track>& tracks, bool allowMissing) {
-	set<string, InsensitiveCompare> artist;
+	set<string, CaseAndAccentsInsensitiveCompare> artist;
 
 	for (auto&& track : tracks) {
 		if (!track.albumArtist.empty())
@@ -187,74 +181,77 @@ void DetectArtistFromTracks(FolderToProcess* folder) {
 		return;
 }
 
-#define d(i,j) dd[(i) * (m+2) + (j) ]
-#define min(x,y) ((x) < (y) ? (x) : (y))
-#define min3(a,b,c) ((a)< (b) ? min((a),(c)) : min((b),(c)))
-#define min4(a,b,c,d) ((a)< (b) ? min3((a),(c),(d)) : min3((b),(c),(d)))
-
-int dprint(int* dd, int n, int m) {
-	int i, j;
-	for (i = 0; i < n + 2; i++) {
-		for (j = 0; j < m + 2; j++) {
-			printf("%02d ", d(i, j));
-		}
-		printf("\n");
-	}
-	printf("\n");
-	return 0;
+string normalize(const string& input) {
+	string result = toLower(input);
+	replaceInPlace(result, "\xE2\x80\xA6", "...");
+	result = removeAccents(result);
+	return result;
 }
 
-int dldist2(char* s, char* t, int n, int m) {
-	int* dd;
-	int i, j, cost, i1, j1, DB;
-	int infinity = n + m;
-	int DA[256 * sizeof(int)];
-
-	memset(DA, 0, sizeof(DA));
-
-	if (!(dd = (int*)malloc((n + 2) * (m + 2) * sizeof(int)))) {
-		return -1;
-	}
-
-	d(0, 0) = infinity;
-	for (i = 0; i < n + 1; i++) {
-		d(i + 1, 1) = i;
-		d(i + 1, 0) = infinity;
-	}
-	for (j = 0; j < m + 1; j++) {
-		d(1, j + 1) = j;
-		d(0, j + 1) = infinity;
-	}
-	dprint(dd, n, m);
-
-	for (i = 1; i < n + 1; i++) {
-		DB = 0;
-		for (j = 1; j < m + 1; j++) {
-			i1 = DA[t[j - 1]];
-			j1 = DB;
-			cost = ((s[i - 1] == t[j - 1]) ? 0 : 1);
-			if (cost == 0)
-				DB = j;
-			d(i + 1, j + 1) =
-					min4(d(i, j) + cost,
-						d(i + 1, j) + 1,
-						d(i, j + 1) + 1,
-						d(i1, j1) + (i - i1 - 1) + 1 + (j - j1 - 1));
-		}
-		DA[s[i - 1]] = i;
-		dprint(dd, n, m);
-	}
-	cost = d(n + 1, m + 1);
-	free(dd);
-	return cost;
-}
-
-void DetectArtistFromInternet(FolderToProcess* folder) {
+bool DetectArtistFromInternetNoCache(FolderToProcess* folder) {
 	if (folder->artist.isEmpty())
-		return;
+		return false;
 
-	list<Artist> candidates = MusicBrainz::searchArtist(folder->artist.name);
+	list<Artist> mbas = MusicBrainz::searchArtist(folder->artist.name);
 
+	struct ArtistAndDistance
+	{
+		size_t distance;
+		Artist* artist;
+
+		ArtistAndDistance(Artist* artist, size_t distance)
+			: distance(distance),
+			  artist(artist) {
+		}
+	};
+
+	string normalizedArtist = normalize(folder->artist.name);
+
+	list<ArtistAndDistance> candidates;
+	transform(mbas.begin(), mbas.end(), back_inserter(candidates), [&](Artist& a) {
+		          size_t distance = computeEditDistance(normalizedArtist, normalize(a.name));
+		          return ArtistAndDistance(&a, distance);
+	          });
+
+	candidates.remove_if([](const ArtistAndDistance& a) {
+		return a.distance > 4;
+	});
+
+	candidates.sort([](const ArtistAndDistance& a, const ArtistAndDistance& b) {
+		return a.distance - b.distance;
+	});
+
+	size_t numCandidates = candidates.size();
+	if (numCandidates < 0)
+		return false;
+
+	if (numCandidates == 1)
+		folder->artist = *candidates.front().artist;
+	else {
+		cout << "More than one";
+		folder->artist = *candidates.front().artist;
+	}
+
+	return true;
+}
+
+
+map<string, pair<Artist, bool>> cachedArtists;
+
+bool DetectArtistFromInternet(FolderToProcess* folder) {
+	string key = normalize(folder->artist.name);
+
+	auto it = cachedArtists.find(key);
+	if (it != cachedArtists.end()) {
+		folder->artist = it->second.first;
+		return it->second.second;
+	}
+
+	bool result = DetectArtistFromInternetNoCache(folder);
+
+	cachedArtists[key] = pair<Artist, bool>(folder->artist, result);
+
+	return result;
 }
 
 void DetectAlbumFromInternet(FolderToProcess* folder) {
@@ -262,8 +259,10 @@ void DetectAlbumFromInternet(FolderToProcess* folder) {
 }
 
 int _tmain(int argc, _TCHAR* argv[]) {
-	list<Artist> artists = MusicBrainz::searchArtist("fred");
-	return 0;
+	removeAccents("asd");
+
+	bl::generator gen;
+	locale::global(gen(""));
 
 	list<FolderToProcess> foldersToProcess;
 
@@ -281,6 +280,7 @@ int _tmain(int argc, _TCHAR* argv[]) {
 	foldersToProcess.remove_if([](const FolderToProcess& f) {
 		return f.tracks.empty();
 	});
+
 
 	for (auto&& folder : foldersToProcess) {
 		cout << "Processing " << folder.folder << " ...\n";

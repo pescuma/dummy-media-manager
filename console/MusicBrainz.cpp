@@ -109,7 +109,7 @@ namespace MusicBrainz
 	list<Artist> MusicBrainz::searchArtist(const string& name) {
 		list<Artist> result;
 
-		URI uri("http://musicbrainz.org/ws/2/artist/");
+		URI uri("http://musicbrainz.org/ws/2/artist");
 		uri.addQueryParameter("query", "artist:" + name);
 
 		RequestResult response = doRequest(uri);
@@ -127,13 +127,26 @@ namespace MusicBrainz
 
 			artist.musicbrainz_artistId = xmlArtist->getAttribute("id");
 			artist.name = getChildValue(xmlArtist, "name");
-			artist.type = xmlArtist->getAttribute("id");
+			artist.type = xmlArtist->getAttribute("type");
 			artist.description = getChildValue(xmlArtist, "disambiguation");
 			artist.gender = getChildValue(xmlArtist, "gender");
 			artist.location = getChildValue(xmlArtist, "area/name");
 
 			result.push_back(artist);
 		}
+
+		return result;
+	}
+
+	list<Album> searchAlbum(const Artist& artist, const string& name) {
+		list<Album> result;
+
+		if (artist.musicbrainz_artistId.empty())
+			return result;
+
+		URI uri("http://musicbrainz.org/ws/2/release");
+		uri.addQueryParameter("query", "release:\"" + name + "\" AND arid:" + artist.musicbrainz_artistId);
+
 
 		return result;
 	}

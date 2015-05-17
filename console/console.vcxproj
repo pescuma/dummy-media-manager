@@ -95,13 +95,13 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>..\deps\poco\Foundation\include;..\deps\poco\Net\include;..\deps\poco\NetSSL_OpenSSL\include;..\deps\poco\XML\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\deps\icu\include;..\deps\poco\Foundation\include;..\deps\poco\Net\include;..\deps\poco\NetSSL_OpenSSL\include;..\deps\poco\XML\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>..\deps\poco\lib64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\deps\icu\lib64;..\deps\poco\lib64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>icule.lib;iculx.lib;icutu.lib;icuuc.lib;icudt.lib;icuin.lib;icuio.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -146,6 +146,7 @@
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="Track.h" />
+    <ClInclude Include="utf8.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Album.cpp" />
@@ -160,6 +161,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="Track.cpp" />
+    <ClCompile Include="utf8.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
@@ -202,12 +204,6 @@
     <Import Project="..\packages\boost_test_exec_monitor-vc120.1.58.0.0\build\native\boost_test_exec_monitor-vc120.targets" Condition="Exists('..\packages\boost_test_exec_monitor-vc120.1.58.0.0\build\native\boost_test_exec_monitor-vc120.targets')" />
     <Import Project="..\packages\boost-vc120.1.58.0.0\build\native\boost-vc120.targets" Condition="Exists('..\packages\boost-vc120.1.58.0.0\build\native\boost-vc120.targets')" />
   </ImportGroup>
-  <Target Name="CopyDllDeps" Label="deps-dlls-debug" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" AfterTargets="AfterBuild">
-    <Copy SourceFiles="$(MSBuildThisFileDirectory)..\deps\poco\bin64\PocoFoundation64d.dll" DestinationFolder="$(TargetDir)" SkipUnchangedFiles="true" />
-    <Copy SourceFiles="$(MSBuildThisFileDirectory)..\deps\poco\bin64\PocoNet64d.dll" DestinationFolder="$(TargetDir)" SkipUnchangedFiles="true" />
-    <Copy SourceFiles="$(MSBuildThisFileDirectory)..\deps\poco\bin64\PocoNetSSL64d.dll" DestinationFolder="$(TargetDir)" SkipUnchangedFiles="true" />
-    <Copy SourceFiles="$(MSBuildThisFileDirectory)..\deps\poco\bin64\PocoXML64d.dll" DestinationFolder="$(TargetDir)" SkipUnchangedFiles="true" />
-  </Target>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Enable NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
@@ -247,5 +243,14 @@
     <Error Condition="!Exists('..\packages\boost_exception-vc120.1.58.0.0\build\native\boost_exception-vc120.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\boost_exception-vc120.1.58.0.0\build\native\boost_exception-vc120.targets'))" />
     <Error Condition="!Exists('..\packages\boost_test_exec_monitor-vc120.1.58.0.0\build\native\boost_test_exec_monitor-vc120.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\boost_test_exec_monitor-vc120.1.58.0.0\build\native\boost_test_exec_monitor-vc120.targets'))" />
     <Error Condition="!Exists('..\packages\boost-vc120.1.58.0.0\build\native\boost-vc120.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\boost-vc120.1.58.0.0\build\native\boost-vc120.targets'))" />
+  </Target>
+  <Target Name="CopyDllDeps" Label="deps-dlls-debug" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" AfterTargets="AfterBuild">
+    <Copy SourceFiles="$(MSBuildThisFileDirectory)..\deps\poco\bin64\PocoFoundation64d.dll" DestinationFolder="$(TargetDir)" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="$(MSBuildThisFileDirectory)..\deps\poco\bin64\PocoNet64d.dll" DestinationFolder="$(TargetDir)" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="$(MSBuildThisFileDirectory)..\deps\poco\bin64\PocoNetSSL64d.dll" DestinationFolder="$(TargetDir)" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="$(MSBuildThisFileDirectory)..\deps\poco\bin64\PocoXML64d.dll" DestinationFolder="$(TargetDir)" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="$(MSBuildThisFileDirectory)..\deps\icu\bin64\icuuc55.dll" DestinationFolder="$(TargetDir)" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="$(MSBuildThisFileDirectory)..\deps\icu\bin64\icuin55.dll" DestinationFolder="$(TargetDir)" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="$(MSBuildThisFileDirectory)..\deps\icu\bin64\icudt55.dll" DestinationFolder="$(TargetDir)" SkipUnchangedFiles="true" />
   </Target>
 </Project>

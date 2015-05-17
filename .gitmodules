@@ -1,9 +1,3 @@
-[submodule "deps/libmusicbrainz"]
-	path = deps/libmusicbrainz
-	url = https://github.com/metabrainz/libmusicbrainz.git
 [submodule "deps/poco"]
 	path = deps/poco
 	url = https://github.com/pocoproject/poco.git
-[submodule "deps/edit_distance"]
-	path = deps/edit_distance
-	url = https://github.com/erikerlandson/edit_distance.git

@@ -5,7 +5,13 @@
 
 #pragma once
 
+#define NOMINMAX
+
 #include "targetver.h"
+
+#include <boost/filesystem.hpp>
+#include <boost/algorithm/string.hpp>
+#include <boost/locale.hpp>
 
 #include <Poco/Net/HTTPClientSession.h>
 #include <Poco/Net/HTTPRequest.h>
@@ -22,7 +28,7 @@
 #include <Poco/URI.h>
 #include <Poco/Exception.h>
 #include <Poco/StringTokenizer.h>
-#include <Poco/UTF8String.h>
+#include <Poco/String.h>
 
 #include <stdio.h>
 #include <tchar.h>
@@ -38,11 +44,9 @@
 #include <tag.h>
 #include <toolkit/tpropertymap.h>
 
-#include <boost/filesystem.hpp>
-#include <boost/algorithm/string.hpp>
-
 namespace bfs = boost::filesystem;
 namespace ba = boost::algorithm;
+namespace bl = boost::locale;
 
 using namespace std;
 
