@@ -9,6 +9,9 @@ public:
 	string artist;
 	string name;
 
+	string musicbrainz_albumId;
+	string musicbrainz_artistId;
+
 	Album();
 	Album(const string& artist, const string& name);
 

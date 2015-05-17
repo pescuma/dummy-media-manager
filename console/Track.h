@@ -1,20 +1,13 @@
 #pragma once
 
-#include "stdafx.h"
+#include <string>
+#include <boost/filesystem.hpp>
 
-class MusicbrainzData
-{
-public:
-	string trackId;
-	string albumId;
-	string artistId;
-	string albumArtistId;
-};
 
 class Track
 {
 public:
-	bfs::path file;
+	boost::filesystem::path file;
 
 	int disk;
 	int number;
@@ -27,7 +20,10 @@ public:
 	int length;
 	int bitrate;
 
-	MusicbrainzData musicbrainz;
+	string musicbrainz_trackId;
+	string musicbrainz_albumId;
+	string musicbrainz_artistId;
+	string musicbrainz_albumArtistId;
 
 	Track();
 };

@@ -1,10 +1,11 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 
 #include "FolderToProcess.h"
+#include "MusicBrainz.h"
 
 static bfs::path make_relative(bfs::path from, bfs::path to) {
-	from = bfs::absolute(from);
-	to = bfs::absolute(to);
+	from = absolute(from);
+	to = absolute(to);
 
 	bfs::path::const_iterator fromIter = from.begin();
 	bfs::path::const_iterator toIter = to.begin();
@@ -30,7 +31,7 @@ static bfs::path make_relative(bfs::path from, bfs::path to) {
 }
 
 static bool isAudioFile(const bfs::path& file) {
-	string ext = bfs::extension(file);
+	string ext = extension(file);
 	if (ext.length() < 2)
 		return false;
 
@@ -122,10 +123,10 @@ void ReadTrackInfo(FolderToProcess* folder) {
 		track.length = tagfile.audioProperties()->length();
 		track.bitrate = tagfile.audioProperties()->bitrate();
 
-		track.musicbrainz.trackId = getString(props, "MUSICBRAINZ_TRACKID");
-		track.musicbrainz.albumId = getString(props, "MUSICBRAINZ_ALBUMID");
-		track.musicbrainz.artistId = getString(props, "MUSICBRAINZ_ARTISTID");
-		track.musicbrainz.albumArtistId = getString(props, "MUSICBRAINZ_ALBUMARTISTID");
+		track.musicbrainz_trackId = getString(props, "MUSICBRAINZ_TRACKID");
+		track.musicbrainz_albumId = getString(props, "MUSICBRAINZ_ALBUMID");
+		track.musicbrainz_artistId = getString(props, "MUSICBRAINZ_ARTISTID");
+		track.musicbrainz_albumArtistId = getString(props, "MUSICBRAINZ_ALBUMARTISTID");
 
 		folder->tracks.push_back(track);
 	}
@@ -134,44 +135,135 @@ void ReadTrackInfo(FolderToProcess* folder) {
 struct InsensitiveCompare
 {
 	bool operator()(const string& a, const string& b) const {
-		return _stricmp(a.c_str(), b.c_str()) < 0;
+		return Poco::UTF8::icompare(a, b) < 0;
 	}
 };
 
-static Album FindAlbum(const list<Track>& tracks, bool allowMissing) {
-	set<string, InsensitiveCompare> artist;
+static Album FindAlbumFromTracks(const list<Track>& tracks, bool allowMissing) {
 	set<string, InsensitiveCompare> album;
 
 	for (auto&& track : tracks) {
-		if (!track.albumArtist.empty())
-			artist.insert(track.albumArtist);
-		else if (!allowMissing)
-			return Album();
-
 		if (!track.album.empty())
 			album.insert(track.album);
 		else if (!allowMissing)
 			return Album();
 	}
 
-	if (artist.size() != 1 || album.size() != 1)
+	if (album.size() != 1)
 		return Album();
 
-	return Album(*artist.begin(), *album.begin());
+	return Album("", *album.begin());
 }
 
-void DetectAlbum(FolderToProcess* folder) {
-	folder->album = FindAlbum(folder->tracks, false);
+void DetectAlbumFromTracks(FolderToProcess* folder) {
+	folder->album = FindAlbumFromTracks(folder->tracks, false);
 	if (!folder->album.isEmpty())
 		return;
 
-	folder->album = FindAlbum(folder->tracks, true);
+	folder->album = FindAlbumFromTracks(folder->tracks, true);
 	if (!folder->album.isEmpty())
 		return;
+}
+
+static Artist FindArtistFromTracks(const list<Track>& tracks, bool allowMissing) {
+	set<string, InsensitiveCompare> artist;
+
+	for (auto&& track : tracks) {
+		if (!track.albumArtist.empty())
+			artist.insert(track.albumArtist);
+		else if (!allowMissing)
+			return Artist();
+	}
+
+	if (artist.size() != 1)
+		return Artist();
+
+	return Artist(*artist.begin());
+}
+
+void DetectArtistFromTracks(FolderToProcess* folder) {
+	folder->artist = FindArtistFromTracks(folder->tracks, false);
+	if (!folder->artist.isEmpty())
+		return;
+}
+
+#define d(i,j) dd[(i) * (m+2) + (j) ]
+#define min(x,y) ((x) < (y) ? (x) : (y))
+#define min3(a,b,c) ((a)< (b) ? min((a),(c)) : min((b),(c)))
+#define min4(a,b,c,d) ((a)< (b) ? min3((a),(c),(d)) : min3((b),(c),(d)))
+
+int dprint(int* dd, int n, int m) {
+	int i, j;
+	for (i = 0; i < n + 2; i++) {
+		for (j = 0; j < m + 2; j++) {
+			printf("%02d ", d(i, j));
+		}
+		printf("\n");
+	}
+	printf("\n");
+	return 0;
+}
+
+int dldist2(char* s, char* t, int n, int m) {
+	int* dd;
+	int i, j, cost, i1, j1, DB;
+	int infinity = n + m;
+	int DA[256 * sizeof(int)];
+
+	memset(DA, 0, sizeof(DA));
+
+	if (!(dd = (int*)malloc((n + 2) * (m + 2) * sizeof(int)))) {
+		return -1;
+	}
+
+	d(0, 0) = infinity;
+	for (i = 0; i < n + 1; i++) {
+		d(i + 1, 1) = i;
+		d(i + 1, 0) = infinity;
+	}
+	for (j = 0; j < m + 1; j++) {
+		d(1, j + 1) = j;
+		d(0, j + 1) = infinity;
+	}
+	dprint(dd, n, m);
+
+	for (i = 1; i < n + 1; i++) {
+		DB = 0;
+		for (j = 1; j < m + 1; j++) {
+			i1 = DA[t[j - 1]];
+			j1 = DB;
+			cost = ((s[i - 1] == t[j - 1]) ? 0 : 1);
+			if (cost == 0)
+				DB = j;
+			d(i + 1, j + 1) =
+					min4(d(i, j) + cost,
+						d(i + 1, j) + 1,
+						d(i, j + 1) + 1,
+						d(i1, j1) + (i - i1 - 1) + 1 + (j - j1 - 1));
+		}
+		DA[s[i - 1]] = i;
+		dprint(dd, n, m);
+	}
+	cost = d(n + 1, m + 1);
+	free(dd);
+	return cost;
+}
+
+void DetectArtistFromInternet(FolderToProcess* folder) {
+	if (folder->artist.isEmpty())
+		return;
+
+	list<Artist> candidates = MusicBrainz::searchArtist(folder->artist.name);
+
+}
+
+void DetectAlbumFromInternet(FolderToProcess* folder) {
 
 }
 
 int _tmain(int argc, _TCHAR* argv[]) {
+	list<Artist> artists = MusicBrainz::searchArtist("fred");
+	return 0;
 
 	list<FolderToProcess> foldersToProcess;
 
@@ -192,7 +284,17 @@ int _tmain(int argc, _TCHAR* argv[]) {
 
 	for (auto&& folder : foldersToProcess) {
 		cout << "Processing " << folder.folder << " ...\n";
-		DetectAlbum(&folder);
+		DetectArtistFromTracks(&folder);
+		DetectAlbumFromTracks(&folder);
+
+		if (!folder.artist.name.empty() && folder.album.artist.empty())
+			folder.album.artist = folder.artist.name;
+	}
+
+	for (auto&& folder : foldersToProcess) {
+		cout << "Processing " << folder.folder << " ...\n";
+		DetectArtistFromInternet(&folder);
+		DetectAlbumFromInternet(&folder);
 	}
 
 
