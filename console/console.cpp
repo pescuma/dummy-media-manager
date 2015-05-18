@@ -245,9 +245,12 @@ Artist DetectArtists(const string& artist) {
 
 	completeAliases(&mbas);
 
-	std::list<Artist> x = from(mbas)
+	std::list<string> x = from(mbas)
 			.where([&](const Artist& c) {
 				return c.aliases.find(artist) != c.aliases.end();
+			})
+			.select([&](const Artist& c) -> string {
+				return c.name;
 			})
 			.toList();
 }

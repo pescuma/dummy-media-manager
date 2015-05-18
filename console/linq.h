@@ -40,6 +40,35 @@ public:
 };
 
 
+template <typename ITERATOR, typename ITEM, typename NEW_ITEM>
+class TransformedIterator
+{
+	ITERATOR current;
+	ITERATOR end;
+	std::function<NEW_ITEM(const ITEM&)> transform;
+
+public:
+	TransformedIterator(const ITERATOR& current, const ITERATOR& end, const std::function<NEW_ITEM(const ITEM&)>& transform)
+		: current(current),
+		  end(end),
+		  transform(transform) {
+	}
+
+	bool operator!=(const TransformedIterator<ITERATOR, ITEM, NEW_ITEM>& other) const {
+		return current != other.current;
+	}
+
+	NEW_ITEM operator*() const {
+		return transform(*current);
+	}
+
+	const TransformedIterator& operator++() {
+		++current;
+		return *this;
+	}
+};
+
+
 template <typename ITERATOR, typename ITEM>
 class Enumerable
 {
@@ -68,13 +97,32 @@ public:
 		);
 	}
 
+	template <typename TRANSFORM, typename NEW_ITEM = typename std::result_of<TRANSFORM(decltype(*std::declval<ITERATOR>()))>::type>
+	Enumerable<TransformedIterator<ITERATOR, ITEM, NEW_ITEM>, NEW_ITEM> select(const TRANSFORM& transform) {
+		return Enumerable<TransformedIterator<ITERATOR, ITEM, NEW_ITEM>, NEW_ITEM>(
+			TransformedIterator<ITERATOR, ITEM, NEW_ITEM>(itBegin, itEnd, transform),
+			TransformedIterator<ITERATOR, ITEM, NEW_ITEM>(itEnd, itEnd, transform)
+		);
+	}
+
 	std::list<ITEM> toList() {
 		std::list<ITEM> result;
-
-		for (ITERATOR it = itBegin; it != itEnd; ++it)
-			result.push_back(*it);
-
+		to(std::back_inserter(result));
 		return result;
+	}
+
+	std::set<ITEM> toSet() {
+		std::set<ITEM> result;
+		to(std::inserter(result, result.begin()));
+		return result;
+	}
+
+	template <typename OUTPUT_ITERATOR>
+	void to(OUTPUT_ITERATOR result) {
+		for (ITERATOR it = itBegin; it != itEnd; ++it) {
+			*result = *it;
+			++result;
+		}
 	}
 };
 
