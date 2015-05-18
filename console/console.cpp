@@ -3,6 +3,7 @@
 #include "FolderToProcess.h"
 #include "MusicBrainz.h"
 #include "utf8.h"
+#include "linq.h"
 
 static bfs::path make_relative(bfs::path from, bfs::path to) {
 	from = absolute(from);
@@ -81,7 +82,6 @@ static string getString(const TagLib::PropertyMap& props, const char* name, cons
 		return defVal;
 	else
 		return prop[0].to8Bit(true);
-
 }
 
 static int getInt(const TagLib::PropertyMap& props, const char* name, int defVal = 0) {
@@ -91,7 +91,6 @@ static int getInt(const TagLib::PropertyMap& props, const char* name, int defVal
 		return defVal;
 	else
 		return prop[0].toInt();
-
 }
 
 static string coalesce(const string& first, const string& second) {
@@ -188,12 +187,16 @@ string normalize(const string& input) {
 	return result;
 }
 
-bool DetectArtistFromInternetNoCache(FolderToProcess* folder) {
-	if (folder->artist.isEmpty())
-		return false;
+void completeAliases(list<Artist>* artists) {
+	for (Artist& artist : *artists) {
+		artist.aliases.insert(artist.name);
 
-	list<Artist> mbas = MusicBrainz::searchArtist(folder->artist.name);
+		for (const string& alias : artist.aliases)
+			artist.aliases.insert(normalize(alias));
+	}
+}
 
+Artist FindBetterCandidate(const string& artist, list<Artist> mbas) {
 	struct ArtistAndDistance
 	{
 		size_t distance;
@@ -205,7 +208,7 @@ bool DetectArtistFromInternetNoCache(FolderToProcess* folder) {
 		}
 	};
 
-	string normalizedArtist = normalize(folder->artist.name);
+	string normalizedArtist = normalize(artist);
 
 	list<ArtistAndDistance> candidates;
 	transform(mbas.begin(), mbas.end(), back_inserter(candidates), [&](Artist& a) {
@@ -223,39 +226,34 @@ bool DetectArtistFromInternetNoCache(FolderToProcess* folder) {
 
 	size_t numCandidates = candidates.size();
 	if (numCandidates < 0)
-		return false;
+		return Artist();
 
-	if (numCandidates == 1)
-		folder->artist = *candidates.front().artist;
-	else {
+	if (numCandidates > 1)
 		cout << "More than one";
-		folder->artist = *candidates.front().artist;
-	}
 
-	return true;
+	return *candidates.front().artist;
 }
 
+list<Artist> artists;
 
-map<string, pair<Artist, bool>> cachedArtists;
 
-bool DetectArtistFromInternet(FolderToProcess* folder) {
-	string key = normalize(folder->artist.name);
+Artist DetectArtists(const string& artist) {
+	if (artist.empty())
+		return Artist();
 
-	auto it = cachedArtists.find(key);
-	if (it != cachedArtists.end()) {
-		folder->artist = it->second.first;
-		return it->second.second;
-	}
+	list<Artist> mbas = MusicBrainz::searchArtist(artist);
 
-	bool result = DetectArtistFromInternetNoCache(folder);
+	completeAliases(&mbas);
 
-	cachedArtists[key] = pair<Artist, bool>(folder->artist, result);
-
-	return result;
+	std::list<Artist> x = from(mbas)
+			.where([&](const Artist& c) {
+				return c.aliases.find(artist) != c.aliases.end();
+			})
+			.toList();
 }
+
 
 void DetectAlbumFromInternet(FolderToProcess* folder) {
-
 }
 
 int _tmain(int argc, _TCHAR* argv[]) {
@@ -293,7 +291,10 @@ int _tmain(int argc, _TCHAR* argv[]) {
 
 	for (auto&& folder : foldersToProcess) {
 		cout << "Processing " << folder.folder << " ...\n";
-		DetectArtistFromInternet(&folder);
+		Artist candidate = DetectArtists(folder.artist.name);
+		if (!candidate.isEmpty())
+			folder.artist = candidate;
+
 		DetectAlbumFromInternet(&folder);
 	}
 

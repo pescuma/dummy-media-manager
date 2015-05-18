@@ -1,12 +1,10 @@
 #pragma once
 
-#include <string>
 
+string toUpper(const string& str);
+string toLower(const string& str);
+string removeAccents(const string& str);
+unsigned int computeEditDistance(const string& s1, const string& s2);
 
-std::string toUpper(const std::string& str);
-std::string toLower(const std::string& str);
-std::string removeAccents(const std::string& str);
-unsigned int computeEditDistance(const std::string& s1, const std::string& s2);
-
-typedef boost::locale::comparator<char, boost::locale::collator_base::secondary> CaseInsensitiveCompare;
-typedef boost::locale::comparator<char, boost::locale::collator_base::primary> CaseAndAccentsInsensitiveCompare;
+typedef bl::comparator<char, bl::collator_base::secondary> CaseInsensitiveCompare;
+typedef bl::comparator<char, bl::collator_base::primary> CaseAndAccentsInsensitiveCompare;

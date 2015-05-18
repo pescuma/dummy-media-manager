@@ -3,5 +3,6 @@
 
 
 FolderToProcess::FolderToProcess(const bfs::path& folder)
-	: folder(folder) {
+	: folder(folder)
+{
 }

@@ -1,6 +1,5 @@
 #pragma once
 
-#include "stdafx.h"
 #include "Track.h"
 #include "Album.h"
 #include "Artist.h"

@@ -1,11 +1,10 @@
 #pragma once
 
-#include <list>
 #include "Artist.h"
 #include "Album.h"
 
 namespace MusicBrainz
 {
-	std::list<Artist> searchArtist(const std::string& name);
-	std::list<Album> searchAlbum(const Artist& artist, const std::string& name);
+list<Artist> searchArtist(const string& name);
+list<Album> searchAlbum(const Artist& artist, const string& name);
 }

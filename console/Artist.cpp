@@ -2,13 +2,16 @@
 #include "Artist.h"
 
 
-Artist::Artist() {
+Artist::Artist()
+{
 }
 
 Artist::Artist(const string& name)
-	:name(name) {
+	: name(name)
+{
 }
 
-bool Artist::isEmpty() {
+bool Artist::isEmpty()
+{
 	return name.empty();
 }

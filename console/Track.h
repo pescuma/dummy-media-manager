@@ -1,13 +1,10 @@
 #pragma once
 
-#include <string>
-#include <boost/filesystem.hpp>
-
 
 class Track
 {
 public:
-	boost::filesystem::path file;
+	bfs::path file;
 
 	int disk;
 	int number;
