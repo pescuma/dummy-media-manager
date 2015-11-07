@@ -12,6 +12,10 @@
     <ClInclude Include="FolderToProcess.h" />
     <ClInclude Include="Track.h" />
     <ClInclude Include="Album.h" />
+    <ClInclude Include="..\deps\clinq\include\clinq.h" />
+    <ClInclude Include="Artist.h" />
+    <ClInclude Include="MusicBrainz.h" />
+    <ClInclude Include="utf8.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="console.cpp" />
@@ -19,6 +23,9 @@
     <ClCompile Include="FolderToProcess.cpp" />
     <ClCompile Include="Track.cpp" />
     <ClCompile Include="Album.cpp" />
+    <ClCompile Include="Artist.cpp" />
+    <ClCompile Include="MusicBrainz.cpp" />
+    <ClCompile Include="utf8.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

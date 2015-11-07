@@ -1,5 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="..\packages\cpplinq.2013.08.10\build\native\cpplinq.props" Condition="Exists('..\packages\cpplinq.2013.08.10\build\native\cpplinq.props')" />
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|x64">
       <Configuration>Debug</Configuration>
@@ -58,7 +59,7 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros">
-    <NuGetPackageImportStamp>f793e605</NuGetPackageImportStamp>
+    <NuGetPackageImportStamp>3d61179c</NuGetPackageImportStamp>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
@@ -95,7 +96,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>..\deps\icu\include;..\deps\poco\Foundation\include;..\deps\poco\Net\include;..\deps\poco\NetSSL_OpenSSL\include;..\deps\poco\XML\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\deps\clinq\include;..\deps\icu\include;..\deps\poco\Foundation\include;..\deps\poco\Net\include;..\deps\poco\NetSSL_OpenSSL\include;..\deps\poco\XML\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -139,10 +140,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="..\deps\clinq\include\clinq.h" />
     <ClInclude Include="Album.h" />
     <ClInclude Include="Artist.h" />
     <ClInclude Include="FolderToProcess.h" />
-    <ClInclude Include="linq.h" />
     <ClInclude Include="MusicBrainz.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
@@ -204,6 +205,7 @@
     <Import Project="..\packages\boost_exception-vc120.1.58.0.0\build\native\boost_exception-vc120.targets" Condition="Exists('..\packages\boost_exception-vc120.1.58.0.0\build\native\boost_exception-vc120.targets')" />
     <Import Project="..\packages\boost_test_exec_monitor-vc120.1.58.0.0\build\native\boost_test_exec_monitor-vc120.targets" Condition="Exists('..\packages\boost_test_exec_monitor-vc120.1.58.0.0\build\native\boost_test_exec_monitor-vc120.targets')" />
     <Import Project="..\packages\boost-vc120.1.58.0.0\build\native\boost-vc120.targets" Condition="Exists('..\packages\boost-vc120.1.58.0.0\build\native\boost-vc120.targets')" />
+    <Import Project="..\packages\cpplinq.2013.08.10\build\native\cpplinq.targets" Condition="Exists('..\packages\cpplinq.2013.08.10\build\native\cpplinq.targets')" />
   </ImportGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
@@ -244,6 +246,8 @@
     <Error Condition="!Exists('..\packages\boost_exception-vc120.1.58.0.0\build\native\boost_exception-vc120.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\boost_exception-vc120.1.58.0.0\build\native\boost_exception-vc120.targets'))" />
     <Error Condition="!Exists('..\packages\boost_test_exec_monitor-vc120.1.58.0.0\build\native\boost_test_exec_monitor-vc120.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\boost_test_exec_monitor-vc120.1.58.0.0\build\native\boost_test_exec_monitor-vc120.targets'))" />
     <Error Condition="!Exists('..\packages\boost-vc120.1.58.0.0\build\native\boost-vc120.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\boost-vc120.1.58.0.0\build\native\boost-vc120.targets'))" />
+    <Error Condition="!Exists('..\packages\cpplinq.2013.08.10\build\native\cpplinq.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\cpplinq.2013.08.10\build\native\cpplinq.props'))" />
+    <Error Condition="!Exists('..\packages\cpplinq.2013.08.10\build\native\cpplinq.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\cpplinq.2013.08.10\build\native\cpplinq.targets'))" />
   </Target>
   <Target Name="CopyDllDeps" Label="deps-dlls-debug" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" AfterTargets="AfterBuild">
     <Copy SourceFiles="$(MSBuildThisFileDirectory)..\deps\poco\bin64\PocoFoundation64d.dll" DestinationFolder="$(TargetDir)" SkipUnchangedFiles="true" />

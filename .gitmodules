@@ -1,3 +1,6 @@
 [submodule "deps/poco"]
 	path = deps/poco
 	url = https://github.com/pocoproject/poco.git
+[submodule "deps/clinq"]
+	path = deps/clinq
+	url = https://github.com/pescuma/clinq.git

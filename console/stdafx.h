@@ -5,7 +5,7 @@
 
 #pragma once
 
-#define NOMINMAX
+//#define NOMINMAX
 
 #include "targetver.h"
 
@@ -44,6 +44,9 @@
 #include <tag.h>
 #include <toolkit/tpropertymap.h>
 
+#include <cpplinq.hpp>
+
+
 namespace bfs = boost::filesystem;
 namespace ba = boost::algorithm;
 namespace bl = boost::locale;
@@ -53,3 +56,4 @@ using namespace std;
 using namespace Poco;
 using namespace Poco::Net;
 using namespace Poco::XML;
+

@@ -3,7 +3,9 @@
 #include "FolderToProcess.h"
 #include "MusicBrainz.h"
 #include "utf8.h"
-#include "linq.h"
+
+#include <clinq.h>
+using namespace clinq;
 
 static bfs::path make_relative(bfs::path from, bfs::path to) {
 	from = absolute(from);
@@ -76,18 +78,18 @@ void listFoldersToProcess(list<FolderToProcess>* result, const bfs::path& rootFo
 }
 
 static string getString(const TagLib::PropertyMap& props, const char* name, const char* defVal = "") {
-	auto&& prop = props[name];
+	const TagLib::StringList& prop = props[name];
 
-	if (prop.size() < 1)
+	if (prop.isEmpty())
 		return defVal;
 	else
 		return prop[0].to8Bit(true);
 }
 
 static int getInt(const TagLib::PropertyMap& props, const char* name, int defVal = 0) {
-	auto&& prop = props[name];
+	const TagLib::StringList& prop = props[name];
 
-	if (prop.size() < 1)
+	if (prop.isEmpty())
 		return defVal;
 	else
 		return prop[0].toInt();
@@ -101,7 +103,7 @@ static string coalesce(const string& first, const string& second) {
 }
 
 void ReadTrackInfo(FolderToProcess* folder) {
-	for (auto&& file : folder->files) {
+	for (const bfs::path& file : folder->files) {
 		TagLib::FileRef tagfile(file.c_str());
 
 		if (tagfile.isNull())
@@ -241,18 +243,23 @@ Artist DetectArtists(const string& artist) {
 	if (artist.empty())
 		return Artist();
 
+	string na = normalize(artist);
+
 	list<Artist> mbas = MusicBrainz::searchArtist(artist);
+
+	if (mbas.empty())
+		mbas = MusicBrainz::searchArtist(na);
+
+	if (mbas.empty())
+		return Artist();
 
 	completeAliases(&mbas);
 
-	std::list<string> x = from(mbas)
-			.where([&](const Artist& c) {
-				return c.aliases.find(artist) != c.aliases.end();
+	return from(mbas)
+			.where([&](Artist& c) {
+				return c.aliases.find(na) != c.aliases.end();
 			})
-			.select([&](const Artist& c) -> string {
-				return c.name;
-			})
-			.toList();
+			.first_or_default(Artist());
 }
 
 
